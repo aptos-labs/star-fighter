@@ -8,6 +8,12 @@ Your best score will be saved on-chain for everyone to see!
 ## Screenshot:
 <img src="screenshot.png" />
 
+## Requirements
+
+In order to play a native build of the game, you need a wallet that supports IC anonymous pairings.
+Make sure you're using Petra Mobile with version >= 1.1.2.
+For the WebGL build, no specific version is required.
+
 ## Project structure
 
 The repository is subdivided into three main folders:
