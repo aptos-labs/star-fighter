@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: bc0f38df41f0a3e4dbbf883491c8310b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Code/Aptos.Unity.Rest/Model/GasEstimation.cs
+  uploadId: 563979

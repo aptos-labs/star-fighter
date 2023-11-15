@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 03224b3fc9327f842b9d576409a6c62a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Code/Aptos.Unity.Rest/Model/TableItemToken/TableItemTokenMetadata.cs
+  uploadId: 563979

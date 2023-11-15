@@ -1,0 +1,38 @@
+{
+  "name": "aptos-unity-webgl-template",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@aptos-labs/wallet-adapter-mui-design": "^1.0.7",
+    "@aptos-labs/wallet-adapter-react": "^1.4.0",
+    "@blocto/aptos-wallet-adapter-plugin": "^0.2.5",
+    "@identity-connect/wallet-adapter-plugin": "^1.2.2",
+    "@martianwallet/aptos-wallet-adapter": "0.0.4",
+    "@pontem/wallet-adapter-plugin": "0.2.0",
+    "@rise-wallet/wallet-adapter": "^0.1.2",
+    "fewcha-plugin-wallet-adapter": "^0.1.1",
+    "petra-plugin-wallet-adapter": "^0.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-unity-webgl": "^9.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react-swc": "^3.3.2",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
+  }
+}

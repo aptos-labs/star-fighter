@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a60bc5fcf6b70b341917203d2dce0d34
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Code/Aptos.asmdef
+  uploadId: 563979

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 7df1adbe855a38549af14a42155210c6
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Code/Aptos.HDWallet/SeedMode.cs
+  uploadId: 563979

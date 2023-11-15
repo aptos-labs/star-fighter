@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f1e7bde50d6b3e44380ea2fdb6d4373d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Code/Aptos.Unity.Rest/Model/TableItemRequestTokenData.cs
+  uploadId: 563979

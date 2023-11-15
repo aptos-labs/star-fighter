@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 393cabdc3418e6d499df63f2f84f99e7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Code/Aptos.Unity.Rest/Model/ResourceCollection.cs
+  uploadId: 563979

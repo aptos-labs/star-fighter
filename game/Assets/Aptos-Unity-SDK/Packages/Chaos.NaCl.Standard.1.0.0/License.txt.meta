@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1222ed9f477b9514e9fa5441f2c71b45
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Packages/Chaos.NaCl.Standard.1.0.0/License.txt
+  uploadId: 563979

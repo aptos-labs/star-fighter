@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: cfec80171f9480844a8aac5e5b826ae4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Code/Aptos.Unity.Rest/Model/ResponseInfo.cs
+  uploadId: 563979

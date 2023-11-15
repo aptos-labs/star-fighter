@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 375088610f2b325408ca7051b3ff60d3
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Packages/NBitcoin.7.0.22/License.txt
+  uploadId: 563979

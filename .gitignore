@@ -1,0 +1,8 @@
+.aptos/
+build/
+.idea/
+*.swp
+*.swo
+
+.DS_Store
+.env

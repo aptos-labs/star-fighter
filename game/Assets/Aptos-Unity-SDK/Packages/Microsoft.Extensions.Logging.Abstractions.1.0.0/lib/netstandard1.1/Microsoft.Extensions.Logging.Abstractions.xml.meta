@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 458f07848c755744385ec2abfb43e706
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Packages/Microsoft.Extensions.Logging.Abstractions.1.0.0/lib/netstandard1.1/Microsoft.Extensions.Logging.Abstractions.xml
+  uploadId: 563979

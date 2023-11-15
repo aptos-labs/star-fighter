@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7674a8107eceafb4fa484c0a81e624e2
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/README.pdf
+  uploadId: 563979

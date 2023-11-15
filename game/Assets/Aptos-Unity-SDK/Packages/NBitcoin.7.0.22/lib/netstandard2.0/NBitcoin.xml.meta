@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8cb1c0558e909934c93057d4b89b3f23
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244713
+  packageName: Aptos Web3 SDK
+  packageVersion: 1.0.4
+  assetPath: Assets/Aptos-Unity-SDK/Packages/NBitcoin.7.0.22/lib/netstandard2.0/NBitcoin.xml
+  uploadId: 563979
