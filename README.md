@@ -18,9 +18,7 @@ The repository is subdivided into three main folders:
 On top of that, we have the `aptos-unity-webgl-template` which is a WebGL
 template that supports the [Aptos Wallet Adapter](https://github.com/aptos-labs/aptos-wallet-adapter).
 
-## Special thanks:
-[gnazario](https://github.com/gnazario)
-
-[bowen](https://github.com/gnazario)
-
-[Lex](https://github.com/gnazario)
+## Collaborators / special thanks:
+- [Greg Nazario](https://github.com/gregnazario)
+- [Bowen Yang](https://github.com/bowenyang007)
+- Aleksey Popov
