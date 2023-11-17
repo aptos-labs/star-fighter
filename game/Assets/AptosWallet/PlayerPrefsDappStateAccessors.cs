@@ -1,6 +1,5 @@
 using IdentityConnect;
 using Newtonsoft.Json;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using K4.Threading;
@@ -55,24 +54,24 @@ public static class LocalStorage
 
 public class PlayerPrefsDappStateAccessors : IDappStateAccessors
 {
-  private static string IC_PAIRINGS_PLAYER_PREFS_KEY = "icDappPairings";
+  private readonly static string IC_PAIRINGS_PLAYER_PREFS_KEY = "icDappPairings";
 
-  public async Task<ICPairingData> get(string address)
+  public async Task<ICPairingData> Get(string address)
   {
-    var pairings = await this.getAll();
+    var pairings = await GetAll();
     return pairings[address];
   }
 
-  public async Task<IDictionary<string, ICPairingData>> getAll()
+  public async Task<IDictionary<string, ICPairingData>> GetAll()
   {
     var serializedPairings = await K4UnityThreadDispatcher.Execute(PlayerPrefs.GetString, IC_PAIRINGS_PLAYER_PREFS_KEY);
     var pairings = JsonConvert.DeserializeObject<Dictionary<string, ICPairingData>>(serializedPairings) ?? new Dictionary<string, ICPairingData>();
     return pairings;
   }
 
-  public async Task update(string address, ICPairingData pairingData)
+  public async Task Update(string address, ICPairingData pairingData)
   {
-    var pairings = await this.getAll();
+    var pairings = await GetAll();
     if (pairingData == null)
     {
       pairings.Remove(address);

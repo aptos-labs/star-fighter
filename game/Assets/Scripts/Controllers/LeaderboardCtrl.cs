@@ -68,7 +68,7 @@ public class LeaderboardCtrl : MonoBehaviour
   private void Awake()
   {
     totalCountFormat = totalCount.text;
-    authService = GetComponentInParent<AuthService>();
+    authService = FindFirstObjectByType<AuthService>();
     myBackendClient = new MyBackendClient(authService);
     for (int i = 0; i < leaderboardContent.childCount; ++i)
     {
@@ -106,8 +106,9 @@ public class LeaderboardCtrl : MonoBehaviour
         var currRowData = CurrentPageData.rows[i];
         var currLeaderboardRow = LeaderboardRows[i];
         currLeaderboardRow.gameObject.SetActive(true);
-        currLeaderboardRow.address.text = currRowData.address.Substring(0, 16) + ".." + currRowData.address.Substring(50, 14);
+        currLeaderboardRow.address.text = currRowData.address.Substring(0, 10) + ".." + currRowData.address.Substring(54, 10);
         currLeaderboardRow.rank.text = (page * PAGE_SIZE + i + 1).ToString();
+        currLeaderboardRow.bestSurvivalTime.text = $"{currRowData.bestSurvivalTimeMs} ms";
       }
       else
       {

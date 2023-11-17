@@ -7,4 +7,5 @@ public class LeaderboardRow : MonoBehaviour
 {
   public UI.Text rank;
   public UI.Text address;
+  public UI.Text bestSurvivalTime;
 }

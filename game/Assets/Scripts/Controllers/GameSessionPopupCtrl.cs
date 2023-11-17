@@ -2,11 +2,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameSessionPopupCtrl : MonoBehaviour
 {
   private GameSessionService gameSessionService;
-  private NavigationService navigationService;
 
   public GameObject icPrompt;
   public GameObject webPrompt;
@@ -20,14 +20,15 @@ public class GameSessionPopupCtrl : MonoBehaviour
   private void Awake()
   {
     // gameObject.SetActive(false);
-    gameSessionService = GetComponentInParent<GameSessionService>();
+    gameSessionService = FindFirstObjectByType<GameSessionService>();
 #if !UNITY_EDITOR && UNITY_WEBGL
-      icPrompt.gameObject.SetActive(false);
-      webPrompt.gameObject.SetActive(true);
-      cancelBtn.SetActive(false);
+    icPrompt.SetActive(false);
+    webPrompt.SetActive(true);
+    cancelBtn.SetActive(false);
 #else
-    icPrompt.gameObject.SetActive(true);
-    webPrompt.gameObject.SetActive(false);
+    icPrompt.SetActive(true);
+    webPrompt.SetActive(false);
+    cancelBtn.SetActive(true);
 #endif
   }
 
@@ -46,7 +47,7 @@ public class GameSessionPopupCtrl : MonoBehaviour
   private CancellationTokenSource createSessionCancellationTokenSource;
   private TaskCompletionSource<bool> taskCompletionSource;
 
-  public async Task<string> CreateSession()
+  public async Task RequestGameSession()
   {
     gameObject.SetActive(true);
     IsReadyToPlay = false;
@@ -61,36 +62,40 @@ public class GameSessionPopupCtrl : MonoBehaviour
           throw new Exception("No active game session");
         }
         IsReadyToPlay = true;
+        taskCompletionSource = new TaskCompletionSource<bool>();
+        await taskCompletionSource.Task;
       }
     }
     catch (OperationCanceledException)
     {
       // Do nothing
-      return null;
+      return;
     }
     catch (Exception ex)
     {
       // TODO: show error
       Debug.Log(ex.Message);
+      return;
+    }
+    finally
+    {
       gameObject.SetActive(false);
+      createSessionCancellationTokenSource = null;
+      taskCompletionSource = null;
     }
 
-    this.taskCompletionSource = new TaskCompletionSource<bool>();
-    await taskCompletionSource.Task;
-    return gameSessionService.ActiveSessionId;
+    var prevActiveScene = SceneManager.GetActiveScene();
+    await SceneManager.UnloadSceneAsync(prevActiveScene);
+    await SceneManager.LoadSceneAsync("Game", LoadSceneMode.Additive);
   }
 
-  public void StartGame()
+  public void OnStartGame()
   {
-    this.taskCompletionSource.SetResult(true);
-    this.taskCompletionSource = null;
-    gameObject.SetActive(false);
+    taskCompletionSource?.SetResult(true);
   }
 
-  public void OnCancelGameSession()
+  public void OnCancelRequest()
   {
     createSessionCancellationTokenSource?.Cancel();
-    createSessionCancellationTokenSource = null;
-    gameObject.SetActive(false);
   }
 }

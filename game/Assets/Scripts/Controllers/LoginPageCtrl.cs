@@ -52,17 +52,13 @@ public class LoginCtrl : MonoBehaviour
 
   private void Awake()
   {
-    authService = GetComponentInParent<AuthService>();
-    walletService = GetComponentInParent<WalletService>();
-  }
-
-  private void Start()
-  {
-    IsConnecting = false;
+    authService = FindFirstObjectByType<AuthService>();
+    walletService = FindFirstObjectByType<WalletService>();
   }
 
   private void OnEnable()
   {
+    IsConnecting = false;
     walletService.OnConnect += OnConnect;
   }
 
@@ -75,7 +71,7 @@ public class LoginCtrl : MonoBehaviour
 
   # region Action handlers
 
-  public async void PairWithIdentityConnect()
+  public async void ConnectWallet()
   {
     IsConnecting = true;
     try
@@ -102,7 +98,7 @@ public class LoginCtrl : MonoBehaviour
 
   # endregion
 
-  private void OnIcPairingInitialized(string url)
+  public void OnIcPairingInitialized(string url)
   {
     QrCodeContent = url;
   }

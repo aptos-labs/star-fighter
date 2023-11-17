@@ -1,7 +1,5 @@
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Threading.Tasks;
-using IdentityConnect;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;

@@ -9,6 +9,13 @@ public class AccountData
   public string pairingId;
 }
 
+public class NetworkData
+{
+  public string name;
+  public string chainId;
+  public string url;
+}
+
 public interface IWalletService
 {
   public event EventHandler<AccountData> OnConnect;

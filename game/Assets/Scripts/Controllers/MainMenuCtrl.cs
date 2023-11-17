@@ -1,4 +1,3 @@
-using Segment.Serialization;
 using UnityEngine;
 
 public class MainMenuCtrl : MonoBehaviour
@@ -14,7 +13,7 @@ public class MainMenuCtrl : MonoBehaviour
 
   private void Awake()
   {
-    authService = GetComponentInParent<AuthService>();
+    authService = FindFirstObjectByType<AuthService>();
     loginComponent.SetActive(false);
     dashboardComponent.SetActive(false);
   }
@@ -26,10 +25,6 @@ public class MainMenuCtrl : MonoBehaviour
       var x = authService.AccountData;
       Debug.Log(x);
       SetActiveComponent(dashboardComponent);
-      // AnalyticsService.Identify(authService.AuthToken, new JsonObject
-      // {
-
-      // });
     }
     else
     {

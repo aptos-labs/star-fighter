@@ -13,7 +13,6 @@ public abstract class ICWalletServiceImpl : MonoBehaviour, IWalletService
   private static PlayerPrefsDappStateAccessors IC_DAPP_STATE_ACCESSORS = new PlayerPrefsDappStateAccessors();
 
   private ICDappClient icDappClient;
-  private BackendPairingClient backendPairingClient;
   private ICPairingData activePairing;
 
   public event EventHandler<AccountData> OnConnect;
@@ -25,18 +24,9 @@ public abstract class ICWalletServiceImpl : MonoBehaviour, IWalletService
       Constants.IC_DAPP_ID,
       Constants.IC_DAPP_HOSTNAME,
       IC_DAPP_STATE_ACCESSORS,
-      new ICDappClientConfig
-      {
-        defaultNetworkName = "mainnet",
-        baseUrl = Constants.IC_BASE_URL,
-      }
-      );
+      new ICDappClientConfig { baseUrl = Constants.IC_BASE_URL });
 
-    var authService = GetComponentInParent<AuthService>();
-    var myBackendClient = new MyBackendClient(authService);
-    backendPairingClient = new BackendPairingClient(myBackendClient, (url) => BroadcastMessage("OnIcPairingInitialized", url));
-
-    var pairings = await IC_DAPP_STATE_ACCESSORS.getAll();
+    var pairings = await IC_DAPP_STATE_ACCESSORS.GetAll();
     activePairing = pairings.Values.FirstOrDefault();
   }
 
@@ -65,13 +55,16 @@ public abstract class ICWalletServiceImpl : MonoBehaviour, IWalletService
 
   public async Task Connect(CancellationToken? cancellationToken = null)
   {
-    var pairing = await icDappClient.connect(backendPairingClient.pairWithQrCode, cancellationToken);
-    if (pairing == null)
-    {
-      return;
-    }
+    var pairingRequest = await icDappClient.CreatePairingRequest(cancellationToken);
+    var dappEd25519PublicKeyBytes = Convert.FromBase64String(pairingRequest.dappEd25519PublicKeyB64);
 
-    activePairing = await IC_DAPP_STATE_ACCESSORS.get(pairing.account.accountAddress);
+    var environmentOrBaseUrl = Constants.IC_ENVIRONMENT_OR_BASE_URL;
+    var url = $"identity-connect:///anonymous-pairings/{pairingRequest.pairingId}/finalize?environment={environmentOrBaseUrl}";
+    BroadcastMessage("OnIcPairingInitialized", url);
+
+    var pairing = await icDappClient.WaitForFinalizedPairingRequest(pairingRequest, cancellationToken);
+
+    activePairing = await IC_DAPP_STATE_ACCESSORS.Get(pairing.account.accountAddress);
     var publicKeyBytes = Convert.FromBase64String(pairing.account.ed25519PublicKeyB64);
     var accountData = new AccountData
     {
@@ -83,15 +76,15 @@ public abstract class ICWalletServiceImpl : MonoBehaviour, IWalletService
 
   public async Task Disconnect()
   {
-    await IC_DAPP_STATE_ACCESSORS.update(activePairing.accountAddress, null);
+    await IC_DAPP_STATE_ACCESSORS.Update(activePairing.accountAddress, null);
   }
 
   public async Task<string> SignAndSubmitTransaction(string serializedPayload, CancellationToken? cancellationToken = null)
   {
     var payload = JsonConvert.DeserializeObject<JToken>(serializedPayload);
-    var requestArgs = new SignAndSubmitTransactionWithPojoPayloadRequestArgs { payload = payload };
+    var requestArgs = new SignAndSubmitTransactionWithPojoPayloadRequestArgs(payload);
     var requestOptions = new SignatureRequestOptions { cancellationToken = cancellationToken };
-    var response = await icDappClient.signAndSubmitTransaction(
+    var response = await icDappClient.SignAndSubmitTransaction(
       activePairing.accountAddress,
       requestArgs,
       requestOptions

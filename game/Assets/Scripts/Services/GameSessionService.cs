@@ -21,9 +21,9 @@ public class GameSessionService : MonoBehaviour
 
   private void Awake()
   {
-    var authService = GetComponent<AuthService>();
+    var authService = FindFirstObjectByType<AuthService>();
     backendClient = new MyBackendClient(authService);
-    walletService = GetComponent<WalletService>();
+    walletService = FindFirstObjectByType<WalletService>();
   }
 
   #endregion
@@ -50,13 +50,13 @@ public class GameSessionService : MonoBehaviour
       var responseBody = await backendClient.PatchAsync($"v1/sessions/{ActiveSessionId}", new
       {
         survivalTimeMs,
-        this.fundTransferTxnHash
+        fundTransferTxnHash
       });
     }
     finally
     {
       ActiveSessionId = null;
-      this.fundTransferTxnHash = null;
+      fundTransferTxnHash = null;
     }
   }
 }

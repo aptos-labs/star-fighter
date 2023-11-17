@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using Segment.Serialization;
+using UnityEngine.SceneManagement;
 
 public static class DateTimeUtils
 {
@@ -20,14 +20,12 @@ public class GameCtrl : MonoBehaviour
   [SerializeField]
   private Text _text;
 
-  private NavigationService navigationService;
   private GameSessionService gameSessionService;
   private long startTime;
 
   private void Awake()
   {
-    navigationService = GetComponentInParent<NavigationService>();
-    gameSessionService = GetComponentInParent<GameSessionService>();
+    gameSessionService = FindFirstObjectByType<GameSessionService>();
   }
 
   private void OnEnable()
@@ -38,7 +36,6 @@ public class GameCtrl : MonoBehaviour
   private void StartGame()
   {
     AnalyticsService.Track("GameStart");
-    endGamePanel.SetActive(false);
     startTime = DateTimeUtils.Now();
     BroadcastMessage("OnGameStart", SendMessageOptions.DontRequireReceiver);
   }
@@ -62,21 +59,19 @@ public class GameCtrl : MonoBehaviour
 
   public async void PlayAgain()
   {
-    this.endGamePanel.SetActive(false);
-    var sessionId = await gameSessionPopupCtrl.CreateSession();
-
-    if (sessionId != null)
+    endGamePanel.SetActive(false);
+    try
     {
-      StartGame();
+      await gameSessionPopupCtrl.RequestGameSession();
     }
-    else
+    finally
     {
-      this.endGamePanel.SetActive(true);
+      endGamePanel.SetActive(true);
     }
   }
 
-  public void NavigateToMainMenu()
+  public async void NavigateToMainMenu()
   {
-    navigationService.Navigate(NavigationRoute.MainMenu);
+    await SceneManager.LoadSceneAsync("MainMenu");
   }
 }
