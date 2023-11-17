@@ -16,6 +16,7 @@
     "aptos": "^1.20.0",
     "@aptos-labs/ts-sdk": "^0.0.4",
     "@identity-connect/api": "^0.4.0",
+    "@vercel/kv": "0.2.1",
     "axios": "^1.5.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
