@@ -29,31 +29,34 @@ export function useWalletRequestHandler({ openWalletSelector }: UseWalletRequest
   const wallet = useWallet();
 
   useEffect(() => {
-    if (wallet.account) {
-      const serializedAccount = JSON.stringify(wallet.account);
-      unityContext.sendMessage('[Root]', 'OnAptosWalletConnect', serializedAccount);
-    }
+    console.log('Detected account change:', wallet.account);
+    const serializedAccount = JSON.stringify(wallet.account ?? null);
+    unityContext.sendMessage('[Root]', 'OnAptosWalletAccountChange', serializedAccount);
   }, [unityContext, wallet.account]);
+
+  useEffect(() => {
+    console.log('Detected network change:', wallet.network);
+    const serializedNetwork = JSON.stringify(wallet.network ?? null);
+    unityContext.sendMessage('[Root]', 'OnAptosWalletNetworkChange', serializedNetwork);
+  }, [unityContext, wallet.network]);
 
   const handleRequest = useCallback(async (method: string, args?: any) => {
     console.log('Handling request', method, args);
     if (method === 'connect') {
-      openWalletSelector();
-      return;
+      return openWalletSelector();
     } else if (method === 'isConnected') {
       return wallet.connected;
     } else if (method === 'disconnect') {
-      wallet.disconnect();
-      return;
+      return wallet.disconnect();
     } else if (method === 'getAccount') {
       return wallet.account;
+    } else if (method === 'getNetwork') {
+      return wallet.network;
     } else if (method === 'signAndSubmitTransaction') {
-      const result = await wallet.signAndSubmitTransaction(args);
-      console.log(result);
-      return result;
+      return await wallet.signAndSubmitTransaction(args);
     }
     throw new Error('Method not supported');
-  }, [wallet]);
+  }, [openWalletSelector, wallet]);
 
   const onAptosWalletRequest = useCallback(async (request: unknown) => {
     try {
