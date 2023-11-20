@@ -3,16 +3,21 @@ import { ADMIN_ACCOUNT_ADDRESS, ADMIN_ACCOUNT_SECRET_KEY, APTOS_NETWORK } from '
 import { randomUUID } from 'crypto';
 import { kv } from "@vercel/kv"
 
-async function waitForLock() {
+async function withAdminLock<T>(callback: () => Promise<T>) {
   const uuid = randomUUID()
-  const isLocked = kv.append('adminOperationQueue', uuid);
-  while (true) {
-    const [currTask] = await kv.lrange('adminOperationQueue', -1, -1);
-    if (currTask === uuid) {
-      await kv.rpop('adminOperationQueue');
-      return;
+  const count = await kv.lpush('adminOperationQueue', uuid);
+  try {
+    // Skip checking if this is the first element in the queue
+    while (count > 1) {
+      const [currTask] = await kv.lrange('adminOperationQueue', -1, -1);
+      if (currTask === uuid) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    return await callback();
+  } finally {
+    await kv.rpop('adminOperationQueue');
   }
 }
 
@@ -28,8 +33,7 @@ interface TransactionOptions {
   maxGasAmount: bigint | number;
 }
 
-export async function simulateAdminTransactionWithPayload(payload: TxnBuilderTypes.TransactionPayloadEntryFunction) {
-  await waitForLock();
+async function simulateAdminTransactionWithPayloadInternal(payload: TxnBuilderTypes.TransactionPayloadEntryFunction) {
   const accountData = await aptosProvider.getAccount(ADMIN_ACCOUNT_ADDRESS);
   const sequenceNumber = BigInt(accountData.sequence_number);
 
@@ -41,7 +45,7 @@ export async function simulateAdminTransactionWithPayload(payload: TxnBuilderTyp
     BigInt(0),
     BigInt(0),
     BigInt(expirationTimestamp),
-    new TxnBuilderTypes.ChainId(await aptosProvider.getChainId())
+    new TxnBuilderTypes.ChainId(await aptosProvider.getChainId()),
   );
 
   const txnAuthenticator = new TxnBuilderTypes.TransactionAuthenticatorEd25519(
@@ -62,12 +66,11 @@ export async function simulateAdminTransactionWithPayload(payload: TxnBuilderTyp
 
   return {
     gasUnitPrice: BigInt(simulatedUserTxn.gas_unit_price),
-    gasUsed: BigInt(simulatedUserTxn.gas_used)
+    gasUsed: BigInt(simulatedUserTxn.gas_used),
   };
 }
 
-export async function submitAdminTransactionWithPayload(payload: TxnBuilderTypes.TransactionPayloadEntryFunction, options: TransactionOptions) {
-  await waitForLock();
+async function submitAdminTransactionWithPayloadInternal(payload: TxnBuilderTypes.TransactionPayloadEntryFunction, options: TransactionOptions) {
   const accountData = await aptosProvider.getAccount(ADMIN_ACCOUNT_ADDRESS);
   const sequenceNumber = BigInt(accountData.sequence_number);
 
@@ -79,7 +82,7 @@ export async function submitAdminTransactionWithPayload(payload: TxnBuilderTypes
     BigInt(options.maxGasAmount),
     BigInt(options.gasUnitPrice),
     BigInt(expirationTimestamp),
-    new TxnBuilderTypes.ChainId(await aptosProvider.getChainId())
+    new TxnBuilderTypes.ChainId(await aptosProvider.getChainId()),
   );
 
   const txnSigningMessage = TransactionBuilder.getSigningMessage(rawTxn);
@@ -94,4 +97,12 @@ export async function submitAdminTransactionWithPayload(payload: TxnBuilderTypes
   const pendingTxn = await aptosProvider.submitSignedBCSTransaction(BCS.bcsToBytes(signedTxn));
   const userTxn = await aptosProvider.waitForTransactionWithResult(pendingTxn.hash);
   return userTxn as Types.UserTransaction;
+}
+
+export async function simulateAdminTransactionWithPayload(payload: TxnBuilderTypes.TransactionPayloadEntryFunction) {
+  return withAdminLock(() => simulateAdminTransactionWithPayloadInternal(payload));
+}
+
+export async function submitAdminTransactionWithPayload(payload: TxnBuilderTypes.TransactionPayloadEntryFunction, options: TransactionOptions) {
+  return withAdminLock(() => submitAdminTransactionWithPayloadInternal(payload, options));
 }
