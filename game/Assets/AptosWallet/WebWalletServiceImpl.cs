@@ -8,6 +8,8 @@ using UnityEngine;
 
 public abstract class WebWalletServiceImpl : MonoBehaviour, IWalletService
 {
+  public static readonly string CONNECTED_ACCOUNT_KEY = "WebWallet_ConnectedAccount";
+
   #region Bridge
 
   /// <summary>
@@ -44,12 +46,10 @@ public abstract class WebWalletServiceImpl : MonoBehaviour, IWalletService
   /// <param name="serializedAccountData">JSON-serialized account</param>
   public void OnAptosWalletAccountChange(string serializedAccountData)
   {
-    AccountData = JsonConvert.DeserializeObject<AccountData>(serializedAccountData);
-    if (AccountData != null)
-    {
-      OnConnect?.Invoke(this, AccountData);
-    }
-    else
+    var connectedAccount = AccountData;
+    var activeAccount = JsonConvert.DeserializeObject<AccountData>(serializedAccountData);
+    Debug.Log($"OnAccountChange: from {connectedAccount?.address} to {activeAccount?.address}");
+    if (connectedAccount != null && activeAccount?.address != connectedAccount.address)
     {
       OnDisconnect?.Invoke(this, null);
     }
@@ -94,29 +94,50 @@ public abstract class WebWalletServiceImpl : MonoBehaviour, IWalletService
 
   private async void Start()
   {
-    var isConnected = await GetIsConnected();
-    if (isConnected)
+    var connectedAccount = AccountData;
+    if (connectedAccount == null)
     {
-      AccountData = await GetAccount();
-      NetworkData = await GetNetwork();
+      return;
     }
+
+    var activeAccount = await GetIsConnected() ? await GetAccount() : null;
+    if (activeAccount?.address != connectedAccount.address)
+    {
+      AccountData = null;
+      OnDisconnect?.Invoke(this, null);
+      return;
+    }
+
+    NetworkData = await GetNetwork();
   }
 
   #endregion
 
   #region WalletService
 
-  public event EventHandler<AccountData> OnConnect;
   public event EventHandler OnDisconnect;
 
   public bool IsConnected => AccountData != null;
-  public AccountData AccountData { get; private set; }
+  public AccountData AccountData
+  {
+    get => LocalStorage.Get<AccountData>(CONNECTED_ACCOUNT_KEY);
+    private set => LocalStorage.Set(CONNECTED_ACCOUNT_KEY, value);
+  }
   public NetworkData NetworkData { get; private set; }
 
-  public Task Connect(CancellationToken? cancellationToken)
+  public async Task<AccountData> Connect(CancellationToken? cancellationToken)
   {
-    // Ideally this should load for as long as the popup is open
-    return SendRequest<bool>("connect");
+    await SendRequest<bool>("connect");
+    var isConnected = await GetIsConnected();
+    Debug.Log($"right after connecting, isConnected: {isConnected}");
+    if (isConnected)
+    {
+      AccountData = await GetAccount();
+      NetworkData = await GetNetwork();
+      Debug.Log($"right after connecting, address: {AccountData.address}");
+      return AccountData;
+    }
+    return null;
   }
 
   public Task Disconnect()

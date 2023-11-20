@@ -23,7 +23,7 @@ public class DashboardCtrl : MonoBehaviour
 
   private AuthService authService;
   private WalletService walletService;
-  private MyBackendClient backendClient;
+  private BackendClient backendClient;
 
   # region MonoBehaviour
 
@@ -31,7 +31,7 @@ public class DashboardCtrl : MonoBehaviour
   {
     authService = FindFirstObjectByType<AuthService>();
     walletService = FindFirstObjectByType<WalletService>();
-    backendClient = new MyBackendClient(authService);
+    backendClient = new BackendClient(authService);
   }
 
   private async void OnEnable()
@@ -72,6 +72,7 @@ public class DashboardCtrl : MonoBehaviour
 
   public void OnDisconnected(object sender, object args)
   {
+    Debug.Log("Disconnect detected, logging out");
     authService.Logout();
     SendMessageUpwards("OnLogout");
   }

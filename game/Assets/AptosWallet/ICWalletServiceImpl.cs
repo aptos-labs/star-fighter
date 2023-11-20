@@ -10,13 +10,14 @@ using UnityEngine;
 
 public abstract class ICWalletServiceImpl : MonoBehaviour, IWalletService
 {
-  private static PlayerPrefsDappStateAccessors IC_DAPP_STATE_ACCESSORS = new PlayerPrefsDappStateAccessors();
+  private static PlayerPrefsDappStateAccessors IC_DAPP_STATE_ACCESSORS = new();
 
   private ICDappClient icDappClient;
   private ICPairingData activePairing;
 
-  public event EventHandler<AccountData> OnConnect;
   public event EventHandler OnDisconnect;
+
+  public ICDappClient ICDappClient => icDappClient;
 
   public async void Awake()
   {
@@ -28,6 +29,27 @@ public abstract class ICWalletServiceImpl : MonoBehaviour, IWalletService
 
     var pairings = await IC_DAPP_STATE_ACCESSORS.GetAll();
     activePairing = pairings.Values.FirstOrDefault();
+  }
+
+  public void OnEnable()
+  {
+    icDappClient.OnDisconnect += OnIcDisconnect;
+  }
+
+  public void OnDisable()
+  {
+    icDappClient.OnDisconnect -= OnIcDisconnect;
+  }
+
+  public void OnIcDisconnect(object sender, string pairingId)
+  {
+    Debug.Log("OnIcDisconnect");
+    if (activePairing != null && activePairing.pairingId == pairingId)
+    {
+      Debug.Log($"Triggering with {pairingId}");
+      activePairing = null;
+      OnDisconnect?.Invoke(this, null);
+    }
   }
 
   #region WalletService
@@ -53,30 +75,27 @@ public abstract class ICWalletServiceImpl : MonoBehaviour, IWalletService
     }
   }
 
-  public async Task Connect(CancellationToken? cancellationToken = null)
+  public async Task<AccountData> Connect(CancellationToken? cancellationToken = null)
   {
     var pairingRequest = await icDappClient.CreatePairingRequest(cancellationToken);
-    var dappEd25519PublicKeyBytes = Convert.FromBase64String(pairingRequest.dappEd25519PublicKeyB64);
 
     var environmentOrBaseUrl = Constants.IC_ENVIRONMENT_OR_BASE_URL;
     var url = $"identity-connect:///anonymous-pairings/{pairingRequest.pairingId}/finalize?environment={environmentOrBaseUrl}";
-    BroadcastMessage("OnIcPairingInitialized", url);
+
+    var ui = GameObject.Find("[UI]");
+    ui.BroadcastMessage("OnIcPairingInitialized", url);
 
     var pairing = await icDappClient.WaitForFinalizedPairingRequest(pairingRequest, cancellationToken);
-
     activePairing = await IC_DAPP_STATE_ACCESSORS.Get(pairing.account.accountAddress);
-    var publicKeyBytes = Convert.FromBase64String(pairing.account.ed25519PublicKeyB64);
-    var accountData = new AccountData
-    {
-      address = pairing.account.accountAddress,
-      publicKey = IdentityConnectMethods.EncodeHex(publicKeyBytes),
-    };
-    OnConnect?.Invoke(this, accountData);
+    return AccountData;
   }
 
   public async Task Disconnect()
   {
-    await IC_DAPP_STATE_ACCESSORS.Update(activePairing.accountAddress, null);
+    if (activePairing != null)
+    {
+      await IC_DAPP_STATE_ACCESSORS.Update(activePairing.accountAddress, null);
+    }
   }
 
   public async Task<string> SignAndSubmitTransaction(string serializedPayload, CancellationToken? cancellationToken = null)

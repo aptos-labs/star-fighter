@@ -8,13 +8,13 @@ public class AuthService : MonoBehaviour
 {
   private static string AUTH_TOKEN_PREFS_KEY = "AuthToken";
 
-  private MyBackendClient backendClient;
+  private BackendClient backendClient;
 
   # region MonoBehavior
 
   private void Start()
   {
-    backendClient = new MyBackendClient(this);
+    backendClient = new BackendClient(this);
   }
 
   #endregion

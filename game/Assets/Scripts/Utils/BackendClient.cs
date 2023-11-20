@@ -5,11 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine.Networking;
 
-public class MyBackendClient
+public class BackendClient
 {
   private readonly AuthService _authService;
 
-  public MyBackendClient(AuthService authService)
+  public BackendClient(AuthService authService)
   {
     _authService = authService;
   }

@@ -22,8 +22,6 @@ public class MainMenuCtrl : MonoBehaviour
   {
     if (authService.IsAuthenticated)
     {
-      var x = authService.AccountData;
-      Debug.Log(x);
       SetActiveComponent(dashboardComponent);
     }
     else
@@ -32,12 +30,12 @@ public class MainMenuCtrl : MonoBehaviour
     }
   }
 
-  private void OnAuthenticated()
+  public void OnAuthenticated()
   {
     SetActiveComponent(dashboardComponent);
   }
 
-  private void OnLogout()
+  public void OnLogout()
   {
     SetActiveComponent(loginComponent);
   }

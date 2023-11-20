@@ -31,7 +31,7 @@ public class LeaderboardCtrl : MonoBehaviour
 
   private static int PAGE_SIZE = 10;
   private AuthService authService;
-  private MyBackendClient myBackendClient;
+  private BackendClient myBackendClient;
 
   private int currentPage = 0;
   private int CurrentPage
@@ -69,7 +69,7 @@ public class LeaderboardCtrl : MonoBehaviour
   {
     totalCountFormat = totalCount.text;
     authService = FindFirstObjectByType<AuthService>();
-    myBackendClient = new MyBackendClient(authService);
+    myBackendClient = new BackendClient(authService);
     for (int i = 0; i < leaderboardContent.childCount; ++i)
     {
       var child = leaderboardContent.GetChild(i);

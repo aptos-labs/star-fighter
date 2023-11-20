@@ -1,10 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using IdentityConnect;
 using UnityEngine;
 
-public class CreateGameSessionResponse
+public record CreateGameSessionResponse
 {
   public string sessionId;
   public string fundTransferPayload;
@@ -12,30 +11,36 @@ public class CreateGameSessionResponse
 
 public class GameSessionService : MonoBehaviour
 {
-  private MyBackendClient backendClient;
-  private WalletService walletService;
+  private static readonly string ACTIVE_SESSION_ID_KEY = "ActiveSessionId";
 
-  private string fundTransferTxnHash;
+  private BackendClient _backendClient;
+  private WalletService _walletService;
+  private string _fundTransferTxnHash;
 
   # region MonoBehavior
 
   private void Awake()
   {
     var authService = FindFirstObjectByType<AuthService>();
-    backendClient = new MyBackendClient(authService);
-    walletService = FindFirstObjectByType<WalletService>();
+    _backendClient = new BackendClient(authService);
+    _walletService = FindFirstObjectByType<WalletService>();
   }
 
   #endregion
 
-  public string ActiveSessionId { get; private set; }
+  public string ActiveSessionId
+  {
+    get => LocalStorage.Get(ACTIVE_SESSION_ID_KEY);
+    private set => LocalStorage.Set(ACTIVE_SESSION_ID_KEY, value);
+  }
+
   public bool HasActiveSession => ActiveSessionId != null;
 
   public async Task CreateSession(CancellationToken? cancellationToken = null)
   {
-    var responseBody = await backendClient.PostAsync<CreateGameSessionResponse>("v1/sessions");
+    var responseBody = await _backendClient.PostAsync<CreateGameSessionResponse>("v1/sessions");
     ActiveSessionId = responseBody.sessionId;
-    fundTransferTxnHash = await walletService.SignAndSubmitTransaction(responseBody.fundTransferPayload, cancellationToken);
+    _fundTransferTxnHash = await _walletService.SignAndSubmitTransaction(responseBody.fundTransferPayload, cancellationToken);
   }
 
   public async Task EndSession(long survivalTimeMs)
@@ -47,16 +52,16 @@ public class GameSessionService : MonoBehaviour
 
     try
     {
-      var responseBody = await backendClient.PatchAsync($"v1/sessions/{ActiveSessionId}", new
+      var responseBody = await _backendClient.PatchAsync($"v1/sessions/{ActiveSessionId}", new
       {
         survivalTimeMs,
-        fundTransferTxnHash
+        fundTransferTxnHash = _fundTransferTxnHash,
       });
     }
     finally
     {
       ActiveSessionId = null;
-      fundTransferTxnHash = null;
+      _fundTransferTxnHash = null;
     }
   }
 }

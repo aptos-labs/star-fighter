@@ -18,14 +18,14 @@ public class NetworkData
 
 public interface IWalletService
 {
-  public event EventHandler<AccountData> OnConnect;
   public event EventHandler OnDisconnect;
   public AccountData AccountData { get; }
   public bool IsConnected { get; }
-  public Task Connect(CancellationToken? cancellationToken);
+  public Task<AccountData> Connect(CancellationToken? cancellationToken);
   public Task Disconnect();
 }
 
+// public class WalletService : LocalWalletServiceImpl { }
 #if !UNITY_EDITOR && UNITY_WEBGL
 public class WalletService : WebWalletServiceImpl { }
 #else

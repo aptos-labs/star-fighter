@@ -59,12 +59,6 @@ public class LoginCtrl : MonoBehaviour
   private void OnEnable()
   {
     IsConnecting = false;
-    walletService.OnConnect += OnConnect;
-  }
-
-  private void OnDisable()
-  {
-    walletService.OnConnect -= OnConnect;
   }
 
   # endregion
@@ -80,7 +74,21 @@ public class LoginCtrl : MonoBehaviour
       using (pairingCancellationTokenSource)
       {
         var cancellationToken = pairingCancellationTokenSource.Token;
-        await walletService.Connect(cancellationToken);
+        var accountData = await walletService.Connect(cancellationToken);
+        if (accountData == null)
+        {
+          return;
+        }
+
+        if (accountData.pairingId != null)
+        {
+          await authService.AuthenticateWithIcPairing(accountData.pairingId);
+        }
+        else
+        {
+          await authService.AuthenticateWithAddressAndPublicKey(accountData.address, accountData.publicKey);
+        }
+        SendMessageUpwards("OnAuthenticated");
       }
     }
     finally
@@ -101,18 +109,5 @@ public class LoginCtrl : MonoBehaviour
   public void OnIcPairingInitialized(string url)
   {
     QrCodeContent = url;
-  }
-
-  private async void OnConnect(object sender, AccountData account)
-  {
-    if (account.pairingId != null)
-    {
-      await authService.AuthenticateWithIcPairing(account.pairingId);
-    }
-    else
-    {
-      await authService.AuthenticateWithAddressAndPublicKey(account.address, account.publicKey);
-    }
-    SendMessageUpwards("OnAuthenticated");
   }
 }
