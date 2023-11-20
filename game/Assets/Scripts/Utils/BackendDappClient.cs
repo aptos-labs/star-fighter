@@ -8,9 +8,9 @@ public class BackendPairingClient
 {
   public delegate void OnPairingRequestCreated(string pairingId);
 
-  private readonly MyBackendClient _backendClient;
+  private readonly BackendClient _backendClient;
 
-  public BackendPairingClient(MyBackendClient backendClient)
+  public BackendPairingClient(BackendClient backendClient)
   {
     _backendClient = backendClient;
   }

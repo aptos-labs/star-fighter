@@ -36,9 +36,9 @@ module.exports = __toCommonJS(src_exports);
 var import_config = require("dotenv/config");
 
 // src/app.ts
-var import_ts_sdk3 = require("@aptos-labs/ts-sdk");
+var import_ts_sdk4 = require("@aptos-labs/ts-sdk");
 var import_cors = __toESM(require("cors"));
-var import_express4 = __toESM(require("express"));
+var import_express5 = __toESM(require("express"));
 
 // src/controllers/auth.ts
 var import_express = __toESM(require("express"));
@@ -47,6 +47,7 @@ var import_express_validator2 = require("express-validator");
 var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
 
 // src/constants.ts
+var import_ts_sdk = require("@aptos-labs/ts-sdk");
 var SERVER_PORT = process.env.SERVER_PORT || 8080;
 var ADMIN_ACCOUNT_ADDRESS = process.env.ADMIN_ADDRESS;
 var ADMIN_ACCOUNT_SECRET_KEY = process.env.ADMIN_SECRET_KEY;
@@ -62,6 +63,7 @@ function isIcEnvironment(environmentOrBaseUrl) {
   return Object.keys(IDENTITY_CONNECT_ENVIRONMENTS_URLS).includes(environmentOrBaseUrl);
 }
 var IDENTITY_CONNECT_BASE_URL = isIcEnvironment(IDENTITY_CONNECT_ENVIRONMENT_OR_BASE_URL) ? IDENTITY_CONNECT_ENVIRONMENTS_URLS[IDENTITY_CONNECT_ENVIRONMENT_OR_BASE_URL] : IDENTITY_CONNECT_ENVIRONMENT_OR_BASE_URL;
+var APTOS_NETWORK = import_ts_sdk.Network.MAINNET;
 
 // src/middlewares/ensureAuthenticated.ts
 var import_express_jwt = require("express-jwt");
@@ -113,7 +115,7 @@ var ICDappBackendClient = class {
 
 // src/controllers/auth.ts
 var import_api = require("@identity-connect/api");
-var import_ts_sdk = require("@aptos-labs/ts-sdk");
+var import_ts_sdk2 = require("@aptos-labs/ts-sdk");
 var authCtrl = import_express.default.Router();
 authCtrl.post(
   "/tokens",
@@ -143,7 +145,7 @@ authCtrl.post(
       return;
     }
     const publicKeyBytes = Buffer.from(pairing.account.ed25519PublicKeyB64, "base64");
-    const publicKey = import_ts_sdk.Hex.fromHexInput(publicKeyBytes).toString();
+    const publicKey = import_ts_sdk2.Hex.fromHexInput(publicKeyBytes).toString();
     const token = import_jsonwebtoken.default.sign({
       address: pairing.account.accountAddress,
       publicKey,
@@ -160,12 +162,13 @@ authCtrl.post(
     const { dappEd25519PublicKeyB64 } = req.body;
     const icDappBackendClient = new ICDappBackendClient();
     const pairing = await icDappBackendClient.createPairing(dappEd25519PublicKeyB64);
+    console.log("created pairing", pairing);
     res.status(200).json({ pairingId: pairing.id, environment: IDENTITY_CONNECT_ENVIRONMENT_OR_BASE_URL });
   })
 );
 
 // src/controllers/user.ts
-var import_ts_sdk2 = require("@aptos-labs/ts-sdk");
+var import_ts_sdk3 = require("@aptos-labs/ts-sdk");
 var import_express2 = __toESM(require("express"));
 var import_express_async_handler2 = __toESM(require("express-async-handler"));
 
@@ -180,11 +183,25 @@ function getUser(req) {
 
 // src/utils/adminOperations.ts
 var import_aptos = require("aptos");
-var aptosProvider = new import_aptos.Provider(import_aptos.Network.TESTNET);
+var import_crypto = require("crypto");
+var import_kv = require("@vercel/kv");
+async function waitForLock() {
+  const uuid = (0, import_crypto.randomUUID)();
+  const isLocked = import_kv.kv.append("adminOperationQueue", uuid);
+  while (true) {
+    const [currTask] = await import_kv.kv.lrange("adminOperationQueue", -1, -1);
+    if (currTask === uuid) {
+      await import_kv.kv.rpop("adminOperationQueue");
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+}
+var aptosProvider = new import_aptos.Provider(APTOS_NETWORK);
 var adminSecretKeyBytes = new import_aptos.HexString(ADMIN_ACCOUNT_SECRET_KEY).toUint8Array();
 var adminSigner = new import_aptos.AptosAccount(adminSecretKeyBytes, ADMIN_ACCOUNT_ADDRESS);
-var adminPendingOperations = void 0;
-async function simulateAdminTransactionWithPayloadInternal(payload) {
+async function simulateAdminTransactionWithPayload(payload) {
+  await waitForLock();
   const accountData = await aptosProvider.getAccount(ADMIN_ACCOUNT_ADDRESS);
   const sequenceNumber = BigInt(accountData.sequence_number);
   const expirationTimestamp = Math.floor(Date.now() / 1e3) + 120;
@@ -214,7 +231,8 @@ async function simulateAdminTransactionWithPayloadInternal(payload) {
     gasUsed: BigInt(simulatedUserTxn.gas_used)
   };
 }
-async function submitAdminTransactionWithPayloadInternal(payload, options) {
+async function submitAdminTransactionWithPayload(payload, options) {
+  await waitForLock();
   const accountData = await aptosProvider.getAccount(ADMIN_ACCOUNT_ADDRESS);
   const sequenceNumber = BigInt(accountData.sequence_number);
   const expirationTimestamp = Math.floor(Date.now() / 1e3) + 120;
@@ -238,18 +256,6 @@ async function submitAdminTransactionWithPayloadInternal(payload, options) {
   const userTxn = await aptosProvider.waitForTransactionWithResult(pendingTxn.hash);
   return userTxn;
 }
-async function simulateAdminTransactionWithPayload(payload) {
-  const currPendingOperations = adminPendingOperations?.catch() ?? Promise.resolve();
-  const newPendingOperations = currPendingOperations.then(() => simulateAdminTransactionWithPayloadInternal(payload));
-  adminPendingOperations = newPendingOperations;
-  return newPendingOperations;
-}
-async function submitAdminTransactionWithPayload(payload, options) {
-  const currPendingOperations = adminPendingOperations?.catch() ?? Promise.resolve();
-  const newPendingOperations = currPendingOperations.then(() => submitAdminTransactionWithPayloadInternal(payload, options));
-  adminPendingOperations = newPendingOperations;
-  return newPendingOperations;
-}
 
 // src/utils/compare.ts
 function compareAscending(lhs, rhs) {
@@ -266,15 +272,16 @@ function compareDescending(lhs, rhs) {
 }
 
 // src/utils/usersStats.ts
-var cachedUsersStats;
+var import_kv2 = require("@vercel/kv");
 async function fetchUsersStats() {
+  console.log("Fetching user stats. This should happen once per session");
   const responseBody = await aptosProvider.view({
     function: `${ADMIN_ACCOUNT_ADDRESS}::star_fighter::get_all_user_stats`,
     type_arguments: [],
     arguments: []
   });
   const rawUsersStats = responseBody[0];
-  cachedUsersStats = {
+  const cachedUsersStats = {
     byAddress: {},
     byScoreDescending: []
   };
@@ -287,11 +294,11 @@ async function fetchUsersStats() {
     cachedUsersStats.byScoreDescending.push(entry);
     cachedUsersStats.byAddress[entry.address] = entry;
   }
-  ensureLeaderboardSorted();
+  ensureLeaderboardSorted(cachedUsersStats);
   return cachedUsersStats;
 }
-function ensureLeaderboardSorted() {
-  cachedUsersStats?.byScoreDescending.sort((lhs, rhs) => {
+function ensureLeaderboardSorted(usersStats) {
+  usersStats.byScoreDescending.sort((lhs, rhs) => {
     if (lhs.bestSurvivalTimeMs !== rhs.bestSurvivalTimeMs) {
       return compareDescending(lhs.bestSurvivalTimeMs, rhs.bestSurvivalTimeMs);
     }
@@ -302,8 +309,11 @@ function ensureLeaderboardSorted() {
   });
 }
 async function getUsersStats() {
+  let cachedUsersStats = await import_kv2.kv.get("cachedUsersStats");
   if (!cachedUsersStats) {
-    cachedUsersStats = await fetchUsersStats();
+    const fetchedUsersStats = await fetchUsersStats();
+    import_kv2.kv.set("cachedUsersStats", fetchedUsersStats);
+    return fetchedUsersStats;
   }
   return cachedUsersStats;
 }
@@ -321,31 +331,32 @@ async function getUserStats(address) {
   };
 }
 async function updateUserStats(address, survivalTimeMs) {
-  const userStats = await getUsersStats();
-  let entry = userStats.byAddress[address];
+  const usersStats = await getUsersStats();
+  let entry = usersStats.byAddress[address];
   if (!entry) {
     entry = {
       address,
       bestSurvivalTimeMs: survivalTimeMs,
       gamesPlayed: 1
     };
-    userStats.byAddress[address] = entry;
-    userStats.byScoreDescending.push(entry);
+    usersStats.byAddress[address] = entry;
+    usersStats.byScoreDescending.push(entry);
   } else {
     entry.gamesPlayed += 1;
     if (survivalTimeMs > entry.bestSurvivalTimeMs) {
       entry.bestSurvivalTimeMs = survivalTimeMs;
     }
   }
-  ensureLeaderboardSorted();
+  ensureLeaderboardSorted(usersStats);
+  import_kv2.kv.set("cachedUsersStats", usersStats);
 }
 
 // src/controllers/user.ts
 var userCtrl = import_express2.default.Router();
 userCtrl.get("", ensureAuthenticated, (0, import_express_async_handler2.default)(async (req, res) => {
   const user = getUser(req);
-  const config = new import_ts_sdk2.AptosConfig({ network: import_ts_sdk2.Network.TESTNET });
-  const aptos = new import_ts_sdk2.Aptos(config);
+  const config = new import_ts_sdk3.AptosConfig({ network: APTOS_NETWORK });
+  const aptos = new import_ts_sdk3.Aptos(config);
   const coinResource = await aptos.getAccountResource({
     accountAddress: user.address,
     resourceType: "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"
@@ -364,7 +375,7 @@ userCtrl.get("", ensureAuthenticated, (0, import_express_async_handler2.default)
 // src/controllers/session.ts
 var import_express3 = __toESM(require("express"));
 var import_express_async_handler3 = __toESM(require("express-async-handler"));
-var import_crypto = require("crypto");
+var import_crypto2 = require("crypto");
 
 // src/utils/buildSaveGameSessionPayload.ts
 var import_aptos2 = require("aptos");
@@ -403,7 +414,7 @@ var sessionCtrl = import_express3.default.Router();
 sessionCtrl.post("", ensureAuthenticated, (0, import_express_async_handler3.default)(async (req, res) => {
   const user = getUser(req);
   const requestedFunds = await getGameSessionMaximumCost(user.address);
-  const sessionId = (0, import_crypto.randomUUID)();
+  const sessionId = (0, import_crypto2.randomUUID)();
   const fundTransferPayload = buildCoinTransferPojoPayload(ADMIN_ACCOUNT_ADDRESS, requestedFunds);
   const serializedFundTransferPayload = JSON.stringify(fundTransferPayload);
   activeSessions[sessionId] = {
@@ -442,9 +453,29 @@ sessionCtrl.patch("/:id", ensureAuthenticated, (0, import_express_async_handler3
   res.status(204).json();
 }));
 
+// src/controllers/leaderboard.ts
+var import_express4 = __toESM(require("express"));
+var import_express_async_handler4 = __toESM(require("express-async-handler"));
+var leaderboardCtrl = import_express4.default.Router();
+leaderboardCtrl.get("", ensureAuthenticated, (0, import_express_async_handler4.default)(async (req, res) => {
+  const { from, to } = req.query;
+  if (to < from) {
+    res.status(400).json();
+    return;
+  }
+  if (to - from > 20) {
+    res.status(400).json();
+    return;
+  }
+  const usersStats = await getUsersStats();
+  const totalCount = usersStats.byScoreDescending.length;
+  const rows = usersStats.byScoreDescending.slice(from, to);
+  res.status(200).json({ totalCount, rows });
+}));
+
 // src/app.ts
-var app = (0, import_express4.default)();
-app.use(import_express4.default.json());
+var app = (0, import_express5.default)();
+app.use(import_express5.default.json());
 app.disable("x-powered-by");
 app.use(
   (0, import_cors.default)({
@@ -457,9 +488,10 @@ app.use(
 app.use("/v1/auth", authCtrl);
 app.use("/v1/user", userCtrl);
 app.use("/v1/sessions", sessionCtrl);
+app.use("/v1/leaderboard", leaderboardCtrl);
 function errorHandler(err, req, res, next) {
   console.log(err);
-  if (err instanceof import_ts_sdk3.AptosApiError) {
+  if (err instanceof import_ts_sdk4.AptosApiError) {
     res.status(500).json({
       name: err.name,
       message: err.message,

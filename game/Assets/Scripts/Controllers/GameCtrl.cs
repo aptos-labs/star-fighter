@@ -62,11 +62,16 @@ public class GameCtrl : MonoBehaviour
     endGamePanel.SetActive(false);
     try
     {
-      await gameSessionPopupCtrl.RequestGameSession();
+      var isNewGame = await gameSessionPopupCtrl.RequestGameSession();
+      if (!isNewGame)
+      {
+        endGamePanel.SetActive(true);
+      }
     }
-    finally
+    catch (Exception ex)
     {
       endGamePanel.SetActive(true);
+      throw ex;
     }
   }
 

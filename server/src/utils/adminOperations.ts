@@ -1,11 +1,25 @@
-import { BCS, HexString, Provider, TxnBuilderTypes, Types, Network, AptosAccount, TransactionBuilder } from 'aptos';
-import express from 'express';
-import expressAsyncHandle from 'express-async-handler';
+import { BCS, HexString, Provider, TxnBuilderTypes, Types, AptosAccount, TransactionBuilder } from 'aptos';
 import { ADMIN_ACCOUNT_ADDRESS, ADMIN_ACCOUNT_SECRET_KEY, APTOS_NETWORK } from '../constants';
-import { ensureAuthenticated } from '../middlewares';
-import { getUser } from '../utils';
 import { randomUUID } from 'crypto';
-import { buildSaveSessionPayload } from './buildSaveGameSessionPayload';
+import { kv } from "@vercel/kv"
+
+async function withAdminLock<T>(callback: () => Promise<T>) {
+  const uuid = randomUUID()
+  const count = await kv.lpush('adminOperationQueue', uuid);
+  try {
+    // Skip checking if this is the first element in the queue
+    while (count > 1) {
+      const [currTask] = await kv.lrange('adminOperationQueue', -1, -1);
+      if (currTask === uuid) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    return await callback();
+  } finally {
+    await kv.rpop('adminOperationQueue');
+  }
+}
 
 export const aptosProvider = new Provider(APTOS_NETWORK as any);
 
@@ -31,7 +45,7 @@ async function simulateAdminTransactionWithPayloadInternal(payload: TxnBuilderTy
     BigInt(0),
     BigInt(0),
     BigInt(expirationTimestamp),
-    new TxnBuilderTypes.ChainId(await aptosProvider.getChainId())
+    new TxnBuilderTypes.ChainId(await aptosProvider.getChainId()),
   );
 
   const txnAuthenticator = new TxnBuilderTypes.TransactionAuthenticatorEd25519(
@@ -52,7 +66,7 @@ async function simulateAdminTransactionWithPayloadInternal(payload: TxnBuilderTy
 
   return {
     gasUnitPrice: BigInt(simulatedUserTxn.gas_unit_price),
-    gasUsed: BigInt(simulatedUserTxn.gas_used)
+    gasUsed: BigInt(simulatedUserTxn.gas_used),
   };
 }
 
@@ -68,7 +82,7 @@ async function submitAdminTransactionWithPayloadInternal(payload: TxnBuilderType
     BigInt(options.maxGasAmount),
     BigInt(options.gasUnitPrice),
     BigInt(expirationTimestamp),
-    new TxnBuilderTypes.ChainId(await aptosProvider.getChainId())
+    new TxnBuilderTypes.ChainId(await aptosProvider.getChainId()),
   );
 
   const txnSigningMessage = TransactionBuilder.getSigningMessage(rawTxn);
@@ -86,15 +100,9 @@ async function submitAdminTransactionWithPayloadInternal(payload: TxnBuilderType
 }
 
 export async function simulateAdminTransactionWithPayload(payload: TxnBuilderTypes.TransactionPayloadEntryFunction) {
-  const currPendingOperations = adminPendingOperations?.catch() ?? Promise.resolve();
-  const newPendingOperations = currPendingOperations.then(() => simulateAdminTransactionWithPayloadInternal(payload));
-  adminPendingOperations = newPendingOperations;
-  return newPendingOperations;
+  return withAdminLock(() => simulateAdminTransactionWithPayloadInternal(payload));
 }
 
 export async function submitAdminTransactionWithPayload(payload: TxnBuilderTypes.TransactionPayloadEntryFunction, options: TransactionOptions) {
-  const currPendingOperations = adminPendingOperations?.catch() ?? Promise.resolve();
-  const newPendingOperations = currPendingOperations.then(() => submitAdminTransactionWithPayloadInternal(payload, options));
-  adminPendingOperations = newPendingOperations;
-  return newPendingOperations;
+  return withAdminLock(() => submitAdminTransactionWithPayloadInternal(payload, options));
 }

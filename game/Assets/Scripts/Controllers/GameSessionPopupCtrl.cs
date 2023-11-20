@@ -47,7 +47,7 @@ public class GameSessionPopupCtrl : MonoBehaviour
   private CancellationTokenSource createSessionCancellationTokenSource;
   private TaskCompletionSource<bool> taskCompletionSource;
 
-  public async Task RequestGameSession()
+  public async Task<bool> RequestGameSession()
   {
     gameObject.SetActive(true);
     IsReadyToPlay = false;
@@ -69,13 +69,7 @@ public class GameSessionPopupCtrl : MonoBehaviour
     catch (OperationCanceledException)
     {
       // Do nothing
-      return;
-    }
-    catch (Exception ex)
-    {
-      // TODO: show error
-      Debug.Log(ex.Message);
-      return;
+      return false;
     }
     finally
     {
@@ -84,9 +78,8 @@ public class GameSessionPopupCtrl : MonoBehaviour
       taskCompletionSource = null;
     }
 
-    var prevActiveScene = SceneManager.GetActiveScene();
-    await SceneManager.UnloadSceneAsync(prevActiveScene);
-    await SceneManager.LoadSceneAsync("Game", LoadSceneMode.Additive);
+    await SceneManager.LoadSceneAsync("Game");
+    return true;
   }
 
   public void OnStartGame()

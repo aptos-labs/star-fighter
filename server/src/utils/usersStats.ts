@@ -1,6 +1,7 @@
 import { ADMIN_ACCOUNT_ADDRESS } from "../constants";
 import { aptosProvider } from "./adminOperations";
 import { compareAscending, compareDescending } from "./compare";
+import { kv } from "@vercel/kv"
 
 interface AllUserStatsItem {
   addr: string;
@@ -22,9 +23,10 @@ interface UsersStats {
   byScoreDescending: LeaderboardItem[];
 }
 
-let cachedUsersStats: UsersStats | undefined;
+// let cachedUsersStats: UsersStats | undefined;
 
 async function fetchUsersStats() {
+  console.log('Fetching user stats. This should happen once per session');
   const responseBody = await aptosProvider.view({
     function: `${ADMIN_ACCOUNT_ADDRESS}::star_fighter::get_all_user_stats`,
     type_arguments: [],
@@ -32,7 +34,7 @@ async function fetchUsersStats() {
   });
   const rawUsersStats = responseBody[0] as AllUserStatsItem[];
 
-  cachedUsersStats = {
+  const cachedUsersStats: UsersStats = {
     byAddress: {},
     byScoreDescending: [],
   };
@@ -47,12 +49,12 @@ async function fetchUsersStats() {
     cachedUsersStats.byAddress[entry.address] = entry;
   }
 
-  ensureLeaderboardSorted();
+  ensureLeaderboardSorted(cachedUsersStats);
   return cachedUsersStats!;
 }
 
-function ensureLeaderboardSorted() {
-  cachedUsersStats?.byScoreDescending.sort((lhs, rhs) => {
+function ensureLeaderboardSorted(usersStats: UsersStats) {
+  usersStats.byScoreDescending.sort((lhs, rhs) => {
     if (lhs.bestSurvivalTimeMs !== rhs.bestSurvivalTimeMs) {
       return compareDescending(lhs.bestSurvivalTimeMs, rhs.bestSurvivalTimeMs);
     }
@@ -64,8 +66,11 @@ function ensureLeaderboardSorted() {
 }
 
 export async function getUsersStats() {
+  let cachedUsersStats = await kv.get<UsersStats>('cachedUsersStats');
   if (!cachedUsersStats) {
-    cachedUsersStats = await fetchUsersStats();
+    const fetchedUsersStats = await fetchUsersStats();
+    kv.set('cachedUsersStats', fetchedUsersStats);
+    return fetchedUsersStats;
   }
   return cachedUsersStats;
 }
@@ -90,21 +95,22 @@ export async function getUserStats(address: string): Promise<UserStatsWithRank> 
 }
 
 export async function updateUserStats(address: string, survivalTimeMs: number) {
-  const userStats = await getUsersStats();
-  let entry = userStats.byAddress[address];
+  const usersStats = await getUsersStats();
+  let entry = usersStats.byAddress[address];
   if (!entry) {
     entry = {
       address,
       bestSurvivalTimeMs: survivalTimeMs,
       gamesPlayed: 1,
     };
-    userStats.byAddress[address] = entry;
-    userStats.byScoreDescending.push(entry);
+    usersStats.byAddress[address] = entry;
+    usersStats.byScoreDescending.push(entry);
   } else {
     entry.gamesPlayed += 1;
     if (survivalTimeMs > entry.bestSurvivalTimeMs) {
       entry.bestSurvivalTimeMs = survivalTimeMs;
     }
   }
-  ensureLeaderboardSorted();
+  ensureLeaderboardSorted(usersStats);
+  kv.set('cachedUsersStats', usersStats);
 }
