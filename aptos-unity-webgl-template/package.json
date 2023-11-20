@@ -10,11 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@aptos-labs/wallet-adapter-mui-design": "^1.0.7",
-    "@aptos-labs/wallet-adapter-react": "^1.4.0",
+    "@aptos-labs/wallet-adapter-core": "2.6.0",
     "@blocto/aptos-wallet-adapter-plugin": "^0.2.5",
     "@identity-connect/wallet-adapter-plugin": "^1.2.2",
     "@martianwallet/aptos-wallet-adapter": "0.0.4",
+    "@mui/material": "5.14.18",
+    "@mui/icons-material": "5.14.18",
+    "@emotion/react": "11.11.1",
+    "@emotion/styled": "11.11.0",
     "@pontem/wallet-adapter-plugin": "0.2.0",
     "@rise-wallet/wallet-adapter": "^0.1.2",
     "fewcha-plugin-wallet-adapter": "^0.1.1",
